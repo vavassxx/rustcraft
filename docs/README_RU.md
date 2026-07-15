@@ -22,15 +22,17 @@
 ### Для разработчиков
 
 1. Клонируйте репозиторий
-2. Соберите Rust SDK: `cd rust-sdk && cargo build --release -p rustcraft-core`
-3. Соберите загрузчик: `cd fabric-loader && ./gradlew build`
+2. Соберите всё одной командой: `make mods`
+3. Запустите клиент: `make run`
 4. Создайте свой мод, используя пример как шаблон
-5. Соберите и установите свой мод
+
+Подробности смотрите в [Руководстве по установке](INSTALLATION_RU.md).
 
 ## Структура проекта
 
 ```
 rustcraft/
+├── Makefile               # Сборка одной командой (make mods / make run)
 ├── fabric-loader/          # Java Fabric мод (загрузчик)
 │   ├── src/main/java/com/rustcraft/
 │   │   ├── RustCraftMod.java

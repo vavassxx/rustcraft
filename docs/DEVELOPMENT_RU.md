@@ -169,7 +169,8 @@ pub extern "C" fn Java_com_example_MyClass_nativeMethod(
 
 1. Форкните репозиторий
 2. Клонируйте свой форк
-3. Настройте среду разработки, как описано в [Руководстве по установке](INSTALLATION_RU.md)
+3. Соберите всё: `make mods`
+4. Запустите клиент: `make run`
 
 ### Стиль кода
 
@@ -202,6 +203,7 @@ cd fabric-loader
 
 ```
 rustcraft/
+├── Makefile               # Сборка одной командой (make mods / make run)
 ├── fabric-loader/          # Java Fabric мод (загрузчик)
 │   ├── src/main/java/
 │   │   └── com/rustcraft/

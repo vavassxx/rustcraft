@@ -59,24 +59,43 @@ Open the Minecraft logs (`.minecraft/logs/latest.log`) and look for:
    cd rustcraft
    ```
 
-2. **Build the Rust SDK**
+2. **Build Everything**
    ```bash
-   cd rust-sdk
-   cargo build --release -p rustcraft-core
+   make mods
+   ```
+   This builds the Rust SDK, example-mod, and copies all artifacts to the right places.
+
+3. **Run the Client**
+   ```bash
+   make run
    ```
 
-3. **Build the Fabric Loader**
-   ```bash
-   cd ../fabric-loader
-   chmod +x gradlew
-   ./gradlew build
-   ```
+#### Makefile Commands
 
-4. **Build for Multiple Versions**
-   ```bash
-   cd ..
-   ./run-client.sh --build-all
-   ```
+| Command | Description |
+|---------|-------------|
+| `make` / `make mods` | Build Rust SDK, example-mod wrapper, and copy libs |
+| `make run` | Build everything and launch Minecraft client |
+| `make rust` | Build only Rust crates (rust-sdk + example-mod) |
+| `make wrapper` | Build example-mod wrapper JAR and copy to mods/ |
+| `make clean` | Clean all build artifacts |
+
+#### Manual Build (without Make)
+
+If you prefer building manually:
+
+```bash
+# Build Rust SDK
+cd rust-sdk && cargo build --release
+
+# Build example-mod
+cd ../example-mod && cargo build --release
+cd wrapper && ./gradlew build
+cp build/libs/rustcraft-example-*.jar ../../fabric-loader/run/mods/
+
+# Build and run fabric-loader
+cd ../../fabric-loader && ./gradlew runClient
+```
 
 ### IDE Setup
 
@@ -95,6 +114,12 @@ Open the Minecraft logs (`.minecraft/logs/latest.log`) and look for:
 4. The workspace will detect both Java and Rust projects
 
 ## Building from Source
+
+### Quick Build
+
+```bash
+make mods
+```
 
 ### Building the Fabric Loader
 
@@ -187,6 +212,12 @@ This will build JARs for all supported Minecraft versions in `build-versions/`.
 3. Delete the RustCraft configuration directory (optional)
 
 ### Cleaning Development Build
+
+```bash
+make clean
+```
+
+Or manually:
 
 ```bash
 cd fabric-loader

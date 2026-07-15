@@ -169,7 +169,8 @@ pub extern "C" fn Java_com_example_MyClass_nativeMethod(
 
 1. Fork the repository
 2. Clone your fork
-3. Set up the development environment as described in [Installation Guide](INSTALLATION.md)
+3. Build everything: `make mods`
+4. Run the client: `make run`
 
 ### Code Style
 
@@ -202,6 +203,7 @@ cd fabric-loader
 
 ```
 rustcraft/
+├── Makefile               # One-command build (make mods / make run)
 ├── fabric-loader/          # Java Fabric mod (loader)
 │   ├── src/main/java/
 │   │   └── com/rustcraft/

@@ -22,15 +22,17 @@ Welcome to the RustCraft documentation. RustCraft is a utility mod for Minecraft
 ### For Developers
 
 1. Clone the repository
-2. Build the Rust SDK: `cd rust-sdk && cargo build --release -p rustcraft-core`
-3. Build the loader: `cd fabric-loader && ./gradlew build`
+2. Build everything with one command: `make mods`
+3. Run the client: `make run`
 4. Create your mod using the example as a template
-5. Build and install your mod
+
+See [Installation Guide](INSTALLATION.md) for details.
 
 ## Project Structure
 
 ```
 rustcraft/
+├── Makefile               # One-command build (make mods / make run)
 ├── fabric-loader/          # Java Fabric mod (loader)
 │   ├── src/main/java/com/rustcraft/
 │   │   ├── RustCraftMod.java

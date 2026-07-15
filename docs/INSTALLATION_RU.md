@@ -59,24 +59,43 @@
    cd rustcraft
    ```
 
-2. **Соберите Rust SDK**
+2. **Соберите всё**
    ```bash
-   cd rust-sdk
-   cargo build --release -p rustcraft-core
+   make mods
+   ```
+   Это соберёт Rust SDK, example-mod и скопирует все артефакты в нужные места.
+
+3. **Запустите клиент**
+   ```bash
+   make run
    ```
 
-3. **Соберите Fabric Loader**
-   ```bash
-   cd ../fabric-loader
-   chmod +x gradlew
-   ./gradlew build
-   ```
+#### Команды Makefile
 
-4. **Сборка для нескольких версий**
-   ```bash
-   cd ..
-   ./run-client.sh --build-all
-   ```
+| Команда | Описание |
+|---------|----------|
+| `make` / `make mods` | Собрать Rust SDK, wrapper example-mod и скопировать библиотеки |
+| `make run` | Собрать всё и запустить клиент Minecraft |
+| `make rust` | Собрать только Rust-крейты (rust-sdk + example-mod) |
+| `make wrapper` | Собрать wrapper example-mod и скопировать в mods/ |
+| `make clean` | Очистить все артефакты сборки |
+
+#### Ручная сборка (без Make)
+
+Если предпочитаете собирать вручную:
+
+```bash
+# Сборка Rust SDK
+cd rust-sdk && cargo build --release
+
+# Сборка example-mod
+cd ../example-mod && cargo build --release
+cd wrapper && ./gradlew build
+cp build/libs/rustcraft-example-*.jar ../../fabric-loader/run/mods/
+
+# Сборка и запуск fabric-loader
+cd ../../fabric-loader && ./gradlew runClient
+```
 
 ### Настройка IDE
 
@@ -95,6 +114,12 @@
 4. Рабочее пространство обнаружит как Java-, так и Rust-проекты
 
 ## Сборка из исходников
+
+### Быстрая сборка
+
+```bash
+make mods
+```
 
 ### Сборка Fabric Loader
 
@@ -188,6 +213,12 @@ cd rust-sdk && cargo build --release -p rustcraft-core
 3. Удалите каталог конфигурации RustCraft (опционально)
 
 ### Очистка среды разработки
+
+```bash
+make clean
+```
+
+Или вручную:
 
 ```bash
 cd fabric-loader
