@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "rustcraft",
+  "version": "${version}",
+  "name": "RustCraft",
+  "description": "Utility mod for loading Rust-written mods",
+  "authors": [
+    "RustCraft Team"
+  ],
+  "contact": {
+    "homepage": "https://github.com/vavassxx/rustcraft",
+    "sources": "https://github.com/vavassxx/rustcraft"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.rustcraft.RustCraftMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": ">=1.14"
+  },
+  "custom": {
+    "rustcraft:apiVersion": "1.0"
+  }
+}

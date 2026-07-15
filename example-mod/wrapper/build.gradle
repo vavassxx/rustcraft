@@ -1,0 +1,68 @@
+plugins {
+    id 'fabric-loom' version '1.4-SNAPSHOT'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven { url 'https://maven.fabricmc.net/' }
+    mavenCentral()
+}
+
+ext {
+    def osName = System.getProperty('os.name').toLowerCase()
+    def archName = System.getProperty('os.arch').toLowerCase()
+    
+    currentPlatform = [
+        os: osName.contains('linux') ? 'linux' : osName.contains('mac') || osName.contains('darwin') ? 'macos' : 'windows',
+        arch: archName.contains('aarch64') || archName.contains('arm64') ? 'aarch64' : 'x64'
+    ]
+    
+    nativeExt = currentPlatform.os == 'windows' ? '.dll' : currentPlatform.os == 'macos' ? '.dylib' : '.so'
+    nativePrefix = currentPlatform.os == 'windows' ? '' : 'lib'
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+}
+
+tasks.named('processResources') {
+    dependsOn 'copyNativeLib'
+}
+
+tasks.register('copyNativeLib') {
+    def nativeSrc = file("${rootProject.projectDir}/../target/release/${nativePrefix}rustcraft_example${nativeExt}")
+    def nativeDstDir = file("src/main/resources/native/${currentPlatform.os}/${currentPlatform.arch}")
+
+    inputs.file nativeSrc
+    outputs.dir nativeDstDir
+
+    doLast {
+        if (nativeSrc.exists()) {
+            nativeDstDir.mkdirs()
+            copy {
+                from nativeSrc
+                into nativeDstDir
+            }
+            println "Copied native library: ${nativeSrc}"
+        } else {
+            logger.warn "Native library not found: ${nativeSrc}. Build Rust example-mod first."
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 17
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}

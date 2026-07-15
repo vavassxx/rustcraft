@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "rustcraft_example",
+  "version": "${version}",
+  "name": "RustCraft Example Mod",
+  "description": "Example mod demonstrating RustCraft capabilities",
+  "authors": [
+    "RustCraft Team"
+  ],
+  "license": "MIT",
+  "contact": {
+    "homepage": "https://github.com/vavassxx/rustcraft"
+  },
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.rustcraft.example.ExampleModWrapper"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": ">=1.14",
+    "rustcraft": "*"
+  }
+}

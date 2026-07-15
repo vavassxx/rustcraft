@@ -1,0 +1,110 @@
+plugins {
+    id 'fabric-loom' version '1.4-SNAPSHOT'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven { url 'https://maven.fabricmc.net/' }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // Temporarily disable fabric-api for testing
+    // modImplementation "net.fabricmc:fabric-api:${project.fabric_version}"
+}
+
+loom {
+    runs {
+        client {
+            client()
+            name "Minecraft Client"
+            property "fabric.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP"
+            property "fabric.logging.disableLevel", "INFO"
+            // Native library paths are managed by the mod loader at runtime
+            ideConfigGenerated = true
+            runDir "run"
+        }
+        server {
+            server()
+            name "Minecraft Server"
+            property "fabric.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP"
+            property "fabric.logging.disableLevel", "INFO"
+            // Native library paths are managed by the mod loader at runtime
+            ideConfigGenerated = true
+            runDir "run"
+        }
+    }
+}
+
+processResources {
+    dependsOn 'copyCoreLib'
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.register('copyCoreLib') {
+    doLast {
+        def osName = System.getProperty("os.name").toLowerCase()
+        def arch = System.getProperty("os.arch").toLowerCase()
+        def isArm = arch.contains("aarch64") || arch.contains("arm64")
+        def subDir = osName.contains("win") ? "windows/x64" :
+                     osName.contains("mac") ? "macos/x64" : "linux/x64"
+        if (isArm) subDir = subDir.replace("x64", "aarch64")
+
+        def libName = osName.contains("win") ? "rustcraft_core.dll" :
+                      osName.contains("mac") ? "librustcraft_core.dylib" : "librustcraft_core.so"
+
+        def nativeSrc = file("${rootProject.projectDir}/../rust-sdk/target/release/${libName}")
+        def nativeDstDir = file("src/main/resources/native/${subDir}")
+
+        if (nativeSrc.exists()) {
+            nativeDstDir.mkdirs()
+            copy {
+                from nativeSrc
+                into nativeDstDir
+            }
+            println "Copied core library: ${nativeSrc}"
+        } else {
+            logger.warn "Core library not found: ${nativeSrc}. Build rustcraft-core first."
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 17
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${base.archivesName.get()}" }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}

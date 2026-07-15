@@ -1,0 +1,16 @@
+[package]
+name = "rustcraft-api"
+version = "1.0.0"
+edition = "2021"
+description = "API for developing RustCraft mods in Rust"
+license = "MIT"
+repository = "https://github.com/vavassxx/rustcraft"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4"
+
+[lib]
+name = "rustcraft_api"
+path = "src/lib.rs"

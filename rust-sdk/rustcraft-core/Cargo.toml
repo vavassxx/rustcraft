@@ -1,0 +1,25 @@
+[package]
+name = "rustcraft-core"
+version = "1.0.0"
+edition = "2021"
+description = "Core native library for RustCraft mod loader"
+license = "MIT"
+repository = "https://github.com/vavassxx/rustcraft"
+
+[lib]
+name = "rustcraft_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+jni = "0.21"
+log = "0.4"
+env_logger = "0.11"
+lazy_static = "1.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+libloading = "0.9"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

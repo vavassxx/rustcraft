@@ -1,0 +1,50 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Java / Gradle
+/build/
+**/build/
+.gradle/
+**/.gradle/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+!example-mod/wrapper/gradle/wrapper/gradle-wrapper.jar
+
+# Fabric Loom
+loom-cache/
+**/loom-cache/
+run/
+**/run/
+
+# Native libraries (build artifacts)
+**/native/linux/
+**/native/windows/
+**/native/macos/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and crash reports
+*.log
+crash-reports/
+logs/
+
+# Temp directories
+tmp/
+**/tmp/
+
+# Environment
+.env
+local.properties
