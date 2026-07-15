@@ -3,6 +3,7 @@
   "id": "rustcraft_example",
   "version": "${version}",
   "name": "RustCraft Example Mod",
+  "icon": "icon.png",
   "description": "Example mod demonstrating RustCraft capabilities",
   "authors": [
     "RustCraft Team"

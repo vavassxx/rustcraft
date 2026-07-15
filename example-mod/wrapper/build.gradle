@@ -35,6 +35,10 @@ dependencies {
 
 tasks.named('processResources') {
     dependsOn 'copyNativeLib'
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
 }
 
 tasks.register('copyNativeLib') {

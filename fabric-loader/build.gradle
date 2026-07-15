@@ -12,6 +12,7 @@ base {
 
 repositories {
     maven { url 'https://maven.fabricmc.net/' }
+    maven { url 'https://maven.terraformersmc.com/' }
     mavenCentral()
 }
 
@@ -19,6 +20,7 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "com.terraformersmc:modmenu:3.2.5"
 
     // Temporarily disable fabric-api for testing
     // modImplementation "net.fabricmc:fabric-api:${project.fabric_version}"

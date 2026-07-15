@@ -3,6 +3,7 @@
   "id": "rustcraft",
   "version": "${version}",
   "name": "RustCraft",
+  "icon": "icon.png",
   "description": "Utility mod for loading Rust-written mods",
   "authors": [
     "RustCraft Team"
