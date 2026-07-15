@@ -33,13 +33,21 @@ jobs:
           key: rust-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: rust-${{ runner.os }}-
 
-      - name: Check formatting
+      - name: Check formatting (rust-sdk)
         run: cargo fmt --all -- --check
         working-directory: rust-sdk
 
-      - name: Clippy
+      - name: Check formatting (example-mod)
+        run: cargo fmt --all -- --check
+        working-directory: example-mod
+
+      - name: Clippy (rust-sdk)
         run: cargo clippy --all-targets -- -D warnings
         working-directory: rust-sdk
+
+      - name: Clippy (example-mod)
+        run: cargo clippy --all-targets -- -D warnings
+        working-directory: example-mod
 
       - name: Build rustcraft-core
         run: cargo build --release -p rustcraft-core

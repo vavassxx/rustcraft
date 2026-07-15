@@ -3,8 +3,15 @@
 //! This library provides the API for developing Minecraft mods in Rust
 //! that can be loaded via the RustCraft Fabric mod.
 
-use std::ffi::{CString, CStr};
+use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+
+/// Wrapper around a raw pointer that is safe to send/sync across threads.
+/// SAFETY: The pointer is valid for the entire lifetime of the mod,
+/// which is managed by the RustCraft core.
+pub struct SyncPtr<T>(pub *const T);
+unsafe impl<T> Send for SyncPtr<T> {}
+unsafe impl<T> Sync for SyncPtr<T> {}
 
 /// Mod context provided by RustCraft
 #[repr(C)]
@@ -30,13 +37,13 @@ pub struct ModMetadata {
 pub trait RustCraftMod {
     /// Get the mod metadata
     fn metadata() -> ModMetadata;
-    
+
     /// Called when the mod is initialized
     fn on_init(&mut self, context: &ModContext);
-    
+
     /// Called every game tick
     fn on_tick(&mut self);
-    
+
     /// Called when the mod is shutting down
     fn on_shutdown(&mut self);
 }
@@ -46,18 +53,23 @@ pub struct ModLogger {
     context: *const ModContext,
 }
 
+// SAFETY: ModContext pointer is valid for the entire lifetime of the mod,
+// which is managed by the RustCraft core.
+unsafe impl Send for ModLogger {}
+unsafe impl Sync for ModLogger {}
+
 impl ModLogger {
     /// Create a new mod logger
     pub fn new(context: *const ModContext) -> Self {
         Self { context }
     }
-    
+
     /// Log an info message
     pub fn info(&self, message: &str) {
         if self.context.is_null() {
             return;
         }
-        
+
         unsafe {
             let ctx = &*self.context;
             if let Some(log_fn) = ctx.log_info {
@@ -66,13 +78,13 @@ impl ModLogger {
             }
         }
     }
-    
+
     /// Log a warning message
     pub fn warn(&self, message: &str) {
         if self.context.is_null() {
             return;
         }
-        
+
         unsafe {
             let ctx = &*self.context;
             if let Some(log_fn) = ctx.log_warn {
@@ -81,13 +93,13 @@ impl ModLogger {
             }
         }
     }
-    
+
     /// Log an error message
     pub fn error(&self, message: &str) {
         if self.context.is_null() {
             return;
         }
-        
+
         unsafe {
             let ctx = &*self.context;
             if let Some(log_fn) = ctx.log_error {
@@ -102,25 +114,22 @@ impl ModLogger {
 #[macro_export]
 macro_rules! rustcraft_mod {
     ($mod_type:ty) => {
-        static mut MOD_INSTANCE: Option<$mod_type> = None;
-        static mut MOD_CONTEXT: Option<*const $crate::ModContext> = None;
-        
+        static MOD_INSTANCE: std::sync::Mutex<Option<$mod_type>> = std::sync::Mutex::new(None);
+        static MOD_CONTEXT: std::sync::Mutex<Option<$crate::SyncPtr<$crate::ModContext>>> =
+            std::sync::Mutex::new(None);
+
         #[no_mangle]
         pub extern "C" fn rustcraft_mod_init() -> *mut $crate::ModContext {
             use $crate::RustCraftMod;
-            
+
             let metadata = <$mod_type>::metadata();
-            
-            // Create mod instance
+
             let mod_instance = <$mod_type>::new();
-            unsafe {
-                MOD_INSTANCE = Some(mod_instance);
-            }
-            
-            // Create context
+            *MOD_INSTANCE.lock().unwrap() = Some(mod_instance);
+
             let mod_id = std::ffi::CString::new(metadata.id).unwrap();
             let mod_version = std::ffi::CString::new(metadata.version).unwrap();
-            
+
             let context = Box::new($crate::ModContext {
                 mod_id: mod_id.into_raw(),
                 mod_version: mod_version.into_raw(),
@@ -128,34 +137,30 @@ macro_rules! rustcraft_mod {
                 log_warn: Some($crate::default_log_warn),
                 log_error: Some($crate::default_log_error),
             });
-            
+
             let context_ptr = Box::into_raw(context);
-            
-            unsafe {
-                MOD_CONTEXT = Some(context_ptr);
-                
-                if let Some(ref mut mod_instance) = MOD_INSTANCE {
-                    mod_instance.on_init(&*context_ptr);
-                }
+            *MOD_CONTEXT.lock().unwrap() = Some($crate::SyncPtr(context_ptr));
+
+            if let Some(ref mut mod_instance) = *MOD_INSTANCE.lock().unwrap() {
+                mod_instance.on_init(unsafe { &*context_ptr });
             }
-            
+
             context_ptr
         }
-        
+
         #[no_mangle]
         #[allow(clippy::not_unsafe_ptr_arg_deref)]
         pub extern "C" fn rustcraft_mod_shutdown(context: *mut $crate::ModContext) {
             use $crate::RustCraftMod;
-            
-            unsafe {
-                if let Some(ref mut mod_instance) = MOD_INSTANCE {
-                    mod_instance.on_shutdown();
-                }
-                
-                MOD_INSTANCE = None;
-                MOD_CONTEXT = None;
-                
-                if !context.is_null() {
+
+            if let Some(ref mut mod_instance) = *MOD_INSTANCE.lock().unwrap() {
+                mod_instance.on_shutdown();
+            }
+            *MOD_INSTANCE.lock().unwrap() = None;
+            *MOD_CONTEXT.lock().unwrap() = None;
+
+            if !context.is_null() {
+                unsafe {
                     let _ = Box::from_raw(context);
                 }
             }
@@ -164,6 +169,7 @@ macro_rules! rustcraft_mod {
 }
 
 /// Default logging implementations
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn default_log_info(message: *const c_char) {
     if message.is_null() {
         return;
@@ -174,6 +180,7 @@ pub extern "C" fn default_log_info(message: *const c_char) {
     }
 }
 
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn default_log_warn(message: *const c_char) {
     if message.is_null() {
         return;
@@ -184,6 +191,7 @@ pub extern "C" fn default_log_warn(message: *const c_char) {
     }
 }
 
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn default_log_error(message: *const c_char) {
     if message.is_null() {
         return;

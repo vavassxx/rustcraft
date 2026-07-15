@@ -86,7 +86,6 @@ public class RustNativeBridge {
             System.load(tempLib.toAbsolutePath().toString());
 
             tempLib.toFile().deleteOnExit();
-            tempDir.toFile().deleteOnExit();
 
             LOGGER.info("Core library loaded successfully");
         }

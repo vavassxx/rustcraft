@@ -18,6 +18,8 @@ public class ExampleModWrapper implements ModInitializer {
 
     private static final String MOD_ID = "rustcraft_example";
     private static final String NATIVE_RESOURCE_DIR = "/native/";
+    private static final int MAX_REGISTRATION_RETRIES = 300;
+    private static final long REGISTRATION_POLL_MS = 50;
 
     private String nativeLibraryPath;
 
@@ -35,7 +37,7 @@ public class ExampleModWrapper implements ModInitializer {
 
         Thread registrationThread = new Thread(() -> {
             try {
-                while (true) {
+                for (int attempt = 0; attempt < MAX_REGISTRATION_RETRIES; attempt++) {
                     Class<?> clazz = Class.forName("com.rustcraft.RustCraftMod");
                     Method getModLoader = clazz.getMethod("getModLoader");
                     Object loader = getModLoader.invoke(null);
@@ -43,8 +45,10 @@ public class ExampleModWrapper implements ModInitializer {
                         registerWithLoader(loader);
                         return;
                     }
-                    Thread.sleep(50);
+                    Thread.sleep(REGISTRATION_POLL_MS);
                 }
+                LOGGER.error("Failed to find RustModLoader after {}ms, giving up",
+                        MAX_REGISTRATION_RETRIES * REGISTRATION_POLL_MS);
             } catch (Exception e) {
                 LOGGER.error("Failed to register with RustModLoader", e);
             }
@@ -119,7 +123,6 @@ public class ExampleModWrapper implements ModInitializer {
         }
 
         tempLib.toFile().deleteOnExit();
-        tempDir.toFile().deleteOnExit();
 
         LOGGER.info("Extracted native library to: {}", tempLib);
         return tempLib.toAbsolutePath().toString();

@@ -203,19 +203,6 @@ Call the mod's shutdown function.
 **Parameters:**
 - `mod_handle` - Handle to the mod
 
-#### rustcraft_get_mod_version
-
-```c
-const char* rustcraft_get_mod_version(long mod_handle);
-```
-
-Get the version string of a mod.
-
-**Parameters:**
-- `mod_handle` - Handle to the mod
-
-**Returns:** Pointer to null-terminated version string.
-
 #### rustcraft_get_last_error
 
 ```c
@@ -258,6 +245,8 @@ package com.rustcraft;
 
 public class RustModLoader {
     public void initialize();
+    public boolean registerMod(RustModWrapper wrapper);
+    public void unregisterMod(String modId);
     public List<RustMod> getLoadedMods();
     public RustMod getMod(String id);
     public boolean isModLoaded(String id);
@@ -279,7 +268,6 @@ public class RustNativeBridge {
     public void unloadMod(long modHandle);
     public void callModInit(long modHandle);
     public void callModShutdown(long modHandle);
-    public String getModVersion(long modHandle);
     public String getLastError();
     public boolean isInitialized();
 }
@@ -295,29 +283,22 @@ package com.rustcraft.mod;
 public class RustMod {
     public void initialize();
     public void shutdown();
-    public RustModMetadata getMetadata();
-    public boolean isInitialized();
+    public String getModId();
     public long getNativeHandle();
+    public boolean isInitialized();
 }
 ```
 
-### RustModMetadata
+### RustModWrapper
 
-Metadata for a Rust mod.
+Interface that Rust mod Java wrappers must implement.
 
 ```java
 package com.rustcraft.mod;
 
-public class RustModMetadata {
-    private String id;
-    private String name;
-    private String version;
-    private String description;
-    private String path;
-    private String[] authors;
-    private String[] dependencies;
-    
-    // Getters and setters
+public interface RustModWrapper {
+    String getNativeLibraryPath();
+    String getModId();
 }
 ```
 

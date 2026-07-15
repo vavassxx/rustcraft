@@ -202,7 +202,7 @@ cd fabric-loader
 
 ```
 rustcraft/
-├── fabric-loader/          # Java Fabric mod
+├── fabric-loader/          # Java Fabric mod (loader)
 │   ├── src/main/java/
 │   │   └── com/rustcraft/
 │   │       ├── RustCraftMod.java
@@ -213,7 +213,9 @@ rustcraft/
 ├── rust-sdk/              # Rust SDK
 │   ├── rustcraft-core/    # Core native library
 │   └── rustcraft-api/     # API for mod developers
-├── example-mod/           # Example mod
+├── example-mod/           # Example Rust mod
+│   ├── src/lib.rs         # Rust mod source code
+│   └── wrapper/           # Java wrapper for Fabric loading
 └── docs/                  # Documentation
 ```
 
@@ -221,10 +223,11 @@ rustcraft/
 
 ### Java Side
 
-- **RustCraftMod**: Main entry point
+- **RustCraftMod**: Main loader entry point
 - **RustModLoader**: Manages mod loading lifecycle
 - **RustNativeBridge**: JNI bridge to native code
 - **RustMod**: Represents a loaded mod
+- **RustModWrapper**: Interface for Java wrappers of Rust mods
 
 ### Rust Side
 
@@ -233,12 +236,13 @@ rustcraft/
 
 ### Loading Process
 
-1. Fabric loads RustCraftMod entrypoint
-2. RustCraftMod initializes RustModLoader and RustNativeBridge
-3. RustNativeBridge loads the core native library from JAR resources
-4. Rust mod Java wrappers (discovered by Fabric via fabric.mod.json) poll for the loader
-5. Each wrapper calls registerMod() with its native library path
-6. RustModLoader loads and initializes each Rust mod
+1. Fabric loads the `RustCraftMod` entrypoint
+2. `RustCraftMod` creates `RustModLoader`, which initializes `RustNativeBridge` and loads the core native library from JAR resources
+3. Fabric discovers Java mod wrappers via `fabric.mod.json` and calls their `onInitialize()`
+4. Each wrapper extracts the native library (.so/.dll/.dylib) from its JAR to a temporary directory
+5. The wrapper polls for `RustModLoader` (since entrypoint initialization order is not guaranteed)
+6. Once found, the wrapper creates a `RustModWrapper` implementation and calls `registerMod()`
+7. `RustModLoader` loads the native library via `RustNativeBridge` and calls `rustcraft_mod_init`
 
 ## Performance Considerations
 

@@ -73,6 +73,11 @@ public class RustModLoader {
 
         RustMod mod = new RustMod(wrapper.getModId(), handle, nativeBridge);
         mod.initialize();
+        if (!mod.isInitialized()) {
+            LOGGER.error("Failed to initialize mod {}, unloading native library", wrapper.getModId());
+            nativeBridge.unloadMod(handle);
+            return false;
+        }
         loadedMods.put(wrapper.getModId(), mod);
 
         LOGGER.info("Successfully registered mod: {}", wrapper.getModId());

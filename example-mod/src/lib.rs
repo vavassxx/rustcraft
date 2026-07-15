@@ -6,7 +6,7 @@
 #[macro_use]
 extern crate rustcraft_api;
 
-use rustcraft_api::{RustCraftMod, ModMetadata, ModContext, ModLogger};
+use rustcraft_api::{ModContext, ModLogger, ModMetadata, RustCraftMod};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Example mod implementation
@@ -38,55 +38,61 @@ impl RustCraftMod for ExampleMod {
             authors: vec!["RustCraft Team".to_string()],
         }
     }
-    
+
     /// Called when the mod is initialized
     fn on_init(&mut self, context: &ModContext) {
         // Initialize logger with the provided context
         self.logger = ModLogger::new(context);
-        
+
         // Log initialization
         self.logger.info("RustCraft Example Mod is initializing!");
-        self.logger.info("This mod demonstrates RustCraft capabilities");
-        
+        self.logger
+            .info("This mod demonstrates RustCraft capabilities");
+
         // Store initialization time
         self.init_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs();
-        
-        self.logger.info(&format!("Initialized at timestamp: {}", self.init_time));
-        
+
+        self.logger
+            .info(&format!("Initialized at timestamp: {}", self.init_time));
+
         // Demonstrate various log levels
         self.logger.info("This is an info message");
         self.logger.warn("This is a warning message");
-        self.logger.error("This is an error message (demonstration only)");
-        
+        self.logger
+            .error("This is an error message (demonstration only)");
+
         self.logger.info("Example mod initialized successfully!");
     }
-    
+
     /// Called every game tick
     fn on_tick(&mut self) {
         self.tick_count += 1;
-        
+
         // Log every 20 ticks (once per second at 20 TPS)
         if self.tick_count.is_multiple_of(20) {
-            self.logger.info(&format!("Tick count: {}", self.tick_count));
+            self.logger
+                .info(&format!("Tick count: {}", self.tick_count));
         }
     }
-    
+
     /// Called when the mod is shutting down
     fn on_shutdown(&mut self) {
-        self.logger.info("RustCraft Example Mod is shutting down...");
-        
+        self.logger
+            .info("RustCraft Example Mod is shutting down...");
+
         let shutdown_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs();
-        
-        let uptime = shutdown_time - self.init_time;
+
+        let uptime = shutdown_time.saturating_sub(self.init_time);
         self.logger.info(&format!("Mod uptime: {} seconds", uptime));
-        self.logger.info(&format!("Total ticks: {}", self.tick_count));
-        
+        self.logger
+            .info(&format!("Total ticks: {}", self.tick_count));
+
         self.logger.info("Example mod shutdown complete!");
     }
 }

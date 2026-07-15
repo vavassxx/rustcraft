@@ -31,7 +31,7 @@ Welcome to the RustCraft documentation. RustCraft is a utility mod for Minecraft
 
 ```
 rustcraft/
-├── fabric-loader/          # Java Fabric mod
+├── fabric-loader/          # Java Fabric mod (loader)
 │   ├── src/main/java/com/rustcraft/
 │   │   ├── RustCraftMod.java
 │   │   ├── RustModLoader.java
@@ -41,7 +41,9 @@ rustcraft/
 ├── rust-sdk/              # Rust SDK
 │   ├── rustcraft-core/    # Core native library
 │   └── rustcraft-api/     # API for mod developers
-├── example-mod/           # Example mod
+├── example-mod/           # Example Rust mod
+│   ├── src/lib.rs         # Rust mod source code
+│   └── wrapper/           # Java wrapper for Fabric loading
 └── docs/                  # Documentation
 ```
 
@@ -61,7 +63,7 @@ RustCraft consists of two main components:
 1. **Java Fabric Mod**: Handles Fabric integration and mod discovery
 2. **Rust Native Library**: Provides the runtime for Rust mods
 
-The Java mod loads the native library via JNI, which then loads individual Rust mod libraries.
+Rust mods are loaded through Java wrappers. Each Rust mod ships with a Java class implementing the `RustModWrapper` interface. Fabric discovers wrappers via `fabric.mod.json`, calls their `onInitialize()`, which extracts the native library from the wrapper's JAR and registers it with `RustModLoader`.
 
 ## Getting Help
 

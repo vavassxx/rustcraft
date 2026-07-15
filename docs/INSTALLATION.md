@@ -22,9 +22,10 @@ This guide covers the installation of RustCraft for both players and developers.
    - Place the `.jar` file in your `.minecraft/mods` directory
 
 3. **Install Rust Mods**
-   - Download Rust mods (`.so`, `.dll`, or `.dylib` files)
+   - Download Rust mod wrapper JARs
    - Place them in your `.minecraft/mods` directory
    - RustCraft will automatically detect and load them
+   - Native libraries (.so/.dll/.dylib) are extracted from the JARs automatically
 
 4. **Launch Minecraft**
    - Start Minecraft with the Fabric profile
@@ -182,7 +183,7 @@ This will build JARs for all supported Minecraft versions in `build-versions/`.
 ### Removing RustCraft
 
 1. Remove `rustcraft-loader-x.x.x.jar` from the mods folder
-2. Remove any Rust mods (`.so`, `.dll`, `.dylib`) from the mods folder
+2. Remove Rust mod wrapper JARs from the mods folder
 3. Delete the RustCraft configuration directory (optional)
 
 ### Cleaning Development Build

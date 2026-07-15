@@ -1,7 +1,8 @@
-use jni::JNIEnv;
 use jni::objects::{JObject, JString};
 use jni::sys::{jlong, jstring};
+use jni::JNIEnv;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 struct RustCraftContext {
@@ -9,12 +10,23 @@ struct RustCraftContext {
     last_error: String,
 }
 
+/// Represents a loaded native mod.
+///
+/// # Safety invariants
+/// - Access to a `ModHandle` from different threads is serialized by the
+///   Java calling convention (init/shutdown/tick are never concurrent for
+///   the same mod). The `valid` flag provides a runtime check.
+/// - A `ModHandle` must not be accessed after `unload()` has been called.
 struct ModHandle {
     id: String,
     library: Option<libloading::Library>,
     context: Option<*mut ModContext>,
+    valid: AtomicBool,
 }
 
+// SAFETY: ModHandle is accessed from JNI threads. Access is serialized by
+// the Java calling convention (one mod is never initialized/shut down from
+// multiple threads simultaneously). The `valid` flag guards against use-after-free.
 unsafe impl Send for ModHandle {}
 unsafe impl Sync for ModHandle {}
 
@@ -64,7 +76,9 @@ pub extern "system" fn Java_com_rustcraft_RustNativeBridge_nativeShutdown(
                 let mh = &mut *ptr;
                 if let Some(ref library) = mh.library {
                     if let Some(mod_ctx) = mh.context {
-                        if let Ok(f) = library.get::<extern "C" fn(*mut ModContext)>(b"rustcraft_mod_shutdown") {
+                        if let Ok(f) =
+                            library.get::<extern "C" fn(*mut ModContext)>(b"rustcraft_mod_shutdown")
+                        {
                             f(mod_ctx);
                         }
                     }
@@ -119,8 +133,16 @@ pub extern "system" fn Java_com_rustcraft_RustNativeBridge_nativeLoadMod(
         }
     };
 
-    let has_init = unsafe { library.get::<extern "C" fn() -> *mut ModContext>(b"rustcraft_mod_init").is_ok() };
-    let has_shutdown = unsafe { library.get::<extern "C" fn(*mut ModContext)>(b"rustcraft_mod_shutdown").is_ok() };
+    let has_init = unsafe {
+        library
+            .get::<extern "C" fn() -> *mut ModContext>(b"rustcraft_mod_init")
+            .is_ok()
+    };
+    let has_shutdown = unsafe {
+        library
+            .get::<extern "C" fn(*mut ModContext)>(b"rustcraft_mod_shutdown")
+            .is_ok()
+    };
 
     if !has_init {
         log::warn!("Mod {} does not export rustcraft_mod_init", mod_id_str);
@@ -133,6 +155,7 @@ pub extern "system" fn Java_com_rustcraft_RustNativeBridge_nativeLoadMod(
         id: mod_id_str.clone(),
         library: Some(library),
         context: None,
+        valid: AtomicBool::new(true),
     });
 
     let handle_ptr = Box::into_raw(mh) as jlong;
@@ -158,15 +181,12 @@ pub extern "system" fn Java_com_rustcraft_RustNativeBridge_nativeUnloadMod(
     let ptr = mod_handle as *mut ModHandle;
     unsafe {
         let mh = &mut *ptr;
-        log::info!("Unloading mod: {}", mh.id);
-
-        if let Some(ref library) = mh.library {
-            if let Some(mod_ctx) = mh.context {
-                if let Ok(f) = library.get::<extern "C" fn(*mut ModContext)>(b"rustcraft_mod_shutdown") {
-                    f(mod_ctx);
-                }
-            }
+        if !mh.valid.load(Ordering::Acquire) {
+            log::warn!("Attempted to unload already-invalid mod: {}", mh.id);
+            return;
         }
+        log::info!("Unloading mod: {}", mh.id);
+        mh.valid.store(false, Ordering::Release);
 
         let mut ctx = CONTEXT.lock().unwrap();
         ctx.mods.remove(&mh.id);
@@ -186,9 +206,14 @@ pub extern "system" fn Java_com_rustcraft_RustNativeBridge_nativeCallModInit(
 
     unsafe {
         let mh = &mut *(mod_handle as *mut ModHandle);
+        if !mh.valid.load(Ordering::Acquire) {
+            log::warn!("Attempted to init invalid mod: {}", mh.id);
+            return;
+        }
         if let Some(ref library) = mh.library {
             log::info!("Calling init for mod: {}", mh.id);
-            if let Ok(f) = library.get::<extern "C" fn() -> *mut ModContext>(b"rustcraft_mod_init") {
+            if let Ok(f) = library.get::<extern "C" fn() -> *mut ModContext>(b"rustcraft_mod_init")
+            {
                 let ctx = f();
                 mh.context = Some(ctx);
                 log::info!("Mod initialized: {}", mh.id);
@@ -211,10 +236,16 @@ pub extern "system" fn Java_com_rustcraft_RustNativeBridge_nativeCallModShutdown
 
     unsafe {
         let mh = &mut *(mod_handle as *mut ModHandle);
+        if !mh.valid.load(Ordering::Acquire) {
+            log::warn!("Attempted to shutdown invalid mod: {}", mh.id);
+            return;
+        }
         if let Some(ref library) = mh.library {
             if let Some(mod_ctx) = mh.context {
                 log::info!("Calling shutdown for mod: {}", mh.id);
-                if let Ok(f) = library.get::<extern "C" fn(*mut ModContext)>(b"rustcraft_mod_shutdown") {
+                if let Ok(f) =
+                    library.get::<extern "C" fn(*mut ModContext)>(b"rustcraft_mod_shutdown")
+                {
                     f(mod_ctx);
                     mh.context = None;
                 }
